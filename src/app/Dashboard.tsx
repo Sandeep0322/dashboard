@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,25 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { EnhancedNetworkDetailsModal } from "./NetworkDetailsModal";
 
 // Expanded mock data for 9 networks
 const networks = [
@@ -124,27 +106,7 @@ const networks = [
 
 export default function BlockchainDashboard() {
   const [selectedNetwork, setSelectedNetwork] = useState(networks[0]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [animationOffset, setAnimationOffset] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    const animationInterval = setInterval(() => {
-      setAnimationOffset((prev) => (prev + 1) % 100);
-    }, 50);
-
-    return () => clearInterval(animationInterval);
-  }, []);
-
-  const filteredTokens = selectedNetwork.tokens.filter(
-    (token) =>
-      token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const calculateTotalValue = (network) => {
-    return network.tokens.reduce((total, token) => total + token.value, 0);
-  };
 
   return (
     <div className="min-h-screen bg-black overflow-hidden relative">
@@ -183,90 +145,21 @@ export default function BlockchainDashboard() {
                   {network.tokens.length} tokens available
                 </p>
                 <p className="text-sm text-blue-300 mt-2">
-                  Total Value: ${calculateTotalValue(network).toLocaleString()}
+                  Total Value: $
+                  {network.tokens
+                    .reduce((total, token) => total + token.value, 0)
+                    .toLocaleString()}
                 </p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="bg-gray-900 text-white border-gray-700 max-w-4xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-blue-400 flex items-center">
-                <span className="text-3xl mr-2">{selectedNetwork.icon}</span>
-                {selectedNetwork.name} Network Details
-              </DialogTitle>
-              <DialogDescription className="text-gray-400">
-                View detailed information about your tokens on this network
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <Search className="text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search tokens..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-grow bg-gray-800 text-white border-gray-700"
-                />
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-700">
-                      <TableHead className="text-blue-400">Token</TableHead>
-                      <TableHead className="text-blue-400">Symbol</TableHead>
-                      <TableHead className="text-blue-400">Balance</TableHead>
-                      <TableHead className="text-blue-400">Value</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTokens.map((token, index) => (
-                      <TableRow
-                        key={index}
-                        className="border-gray-700 hover:bg-gray-800 transition-colors"
-                      >
-                        <TableCell className="font-medium text-gray-300">
-                          {token.name}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="bg-blue-900 text-blue-300 border-blue-700"
-                          >
-                            {token.symbol}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {token.balance}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          ${token.value.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="mt-4 text-right">
-                <p className="text-lg font-semibold text-blue-400">
-                  Total Value: $
-                  {calculateTotalValue(selectedNetwork).toLocaleString()}
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <Button
-                onClick={() => setIsModalOpen(false)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Close
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <EnhancedNetworkDetailsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          network={selectedNetwork}
+        />
       </div>
     </div>
   );
