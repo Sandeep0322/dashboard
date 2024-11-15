@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,111 +9,355 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EnhancedNetworkDetailsModal } from "./NetworkDetailsModal";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import axios from "axios";
 
 // Expanded mock data for 9 networks
-const networks = [
+const initialNetworks: Network[] = [
   {
     id: 1,
-    name: "Ethereum",
-    icon: "🌐",
-    tokens: [
-      { name: "Ethereum", symbol: "ETH", balance: "2.5", value: 4500 },
-      { name: "Uniswap", symbol: "UNI", balance: "100", value: 200 },
-      { name: "Chainlink", symbol: "LINK", balance: "50", value: 500 },
-    ],
+    name: "Bitkub",
+    chainId: 96,
+    icon: "🔵",
+    nativeToken: "KUB",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 2,
-    name: "Binance Smart Chain",
-    icon: "🟨",
-    tokens: [
-      { name: "Binance Coin", symbol: "BNB", balance: "10", value: 3000 },
-      { name: "PancakeSwap", symbol: "CAKE", balance: "500", value: 1000 },
-      { name: "Venus", symbol: "XVS", balance: "20", value: 300 },
-    ],
+    name: "BASE",
+    chainId: 8453,
+    icon: "🔸",
+    nativeToken: "ETH",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 3,
-    name: "Polygon",
-    icon: "🟣",
-    tokens: [
-      { name: "Polygon", symbol: "MATIC", balance: "1000", value: 800 },
-      { name: "Aave", symbol: "AAVE", balance: "5", value: 1500 },
-      { name: "QuickSwap", symbol: "QUICK", balance: "10", value: 100 },
-    ],
+    name: "ETHEREUM",
+    chainId: 1,
+    icon: "♻️",
+    nativeToken: "ETH",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 4,
-    name: "Avalanche",
-    icon: "🔺",
-    tokens: [
-      { name: "Avalanche", symbol: "AVAX", balance: "15", value: 750 },
-      { name: "Trader Joe", symbol: "JOE", balance: "300", value: 600 },
-      { name: "BenQi", symbol: "QI", balance: "200", value: 400 },
-    ],
+    name: "CELO",
+    chainId: 42220,
+    icon: "🌱",
+    nativeToken: "CELO",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 5,
-    name: "Solana",
-    icon: "☀️",
-    tokens: [
-      { name: "Solana", symbol: "SOL", balance: "50", value: 5000 },
-      { name: "Serum", symbol: "SRM", balance: "1000", value: 200 },
-      { name: "Raydium", symbol: "RAY", balance: "200", value: 400 },
-    ],
+    name: "KINTO",
+    chainId: 2442,
+    icon: "⚙️",
+    nativeToken: "KINTO",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 6,
-    name: "Cardano",
-    icon: "🔵",
-    tokens: [
-      { name: "Cardano", symbol: "ADA", balance: "1000", value: 1200 },
-      { name: "Ergo", symbol: "ERG", balance: "100", value: 500 },
-      { name: "Sundaeswap", symbol: "SUNDAE", balance: "5000", value: 250 },
-    ],
+    name: "Polygon",
+    chainId: 137,
+    icon: "🛠️",
+    nativeToken: "MATIC",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 7,
-    name: "Polkadot",
-    icon: "⚪",
-    tokens: [
-      { name: "Polkadot", symbol: "DOT", balance: "100", value: 2000 },
-      { name: "Kusama", symbol: "KSM", balance: "10", value: 1000 },
-      { name: "Acala", symbol: "ACA", balance: "500", value: 250 },
-    ],
+    name: "Flow",
+    chainId: null,
+    icon: "🌊",
+    nativeToken: "FLOW",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 8,
-    name: "Cosmos",
-    icon: "🌌",
-    tokens: [
-      { name: "Cosmos", symbol: "ATOM", balance: "50", value: 750 },
-      { name: "Osmosis", symbol: "OSMO", balance: "200", value: 400 },
-      { name: "Juno", symbol: "JUNO", balance: "100", value: 300 },
-    ],
+    name: "LayerZero",
+    chainId: null,
+    icon: "🌐",
+    nativeToken: "ZRO",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
   {
     id: 9,
-    name: "Algorand",
-    icon: "🔷",
-    tokens: [
-      { name: "Algorand", symbol: "ALGO", balance: "1000", value: 600 },
-      { name: "Yieldly", symbol: "YLDY", balance: "10000", value: 100 },
-      { name: "Algofi", symbol: "ALGO", balance: "500", value: 50 },
-    ],
+    name: "Arbitrum",
+    chainId: 42161,
+    icon: "🚀",
+    nativeToken: "ETH",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 10,
+    name: "Unichain",
+    chainId: 1024,
+    icon: "⚖️",
+    nativeToken: "UNI",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 11,
+    name: "Scroll",
+    chainId: 534352,
+    icon: "🔁",
+    nativeToken: "ETH",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 12,
+    name: "Starknet",
+    chainId: null,
+    icon: "🌌",
+    nativeToken: "STRK",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 13,
+    name: "Mantle",
+    chainId: 5000,
+    icon: "🧥",
+    nativeToken: "MNT",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 14,
+    name: "Chiliz",
+    chainId: 88888,
+    icon: "🌶️",
+    nativeToken: "CHZ",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 15,
+    name: "INCO Network",
+    chainId: null,
+    icon: "🔗",
+    nativeToken: "INCO",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 16,
+    name: "Hedera",
+    chainId: null,
+    icon: "🌿",
+    nativeToken: "HBAR",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 17,
+    name: "NEAR",
+    chainId: null,
+    icon: "🌠",
+    nativeToken: "NEAR",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 18,
+    name: "Flare Network",
+    chainId: 14,
+    icon: "🔥",
+    nativeToken: "FLR",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 19,
+    name: "Rootstock",
+    chainId: 30,
+    icon: "🌳",
+    nativeToken: "RBTC",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 20,
+    name: "Neon",
+    chainId: 245022934,
+    icon: "💡",
+    nativeToken: "NEON",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 21,
+    name: "Oasis",
+    chainId: 42262,
+    icon: "🏝️",
+    nativeToken: "ROSE",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 22,
+    name: "Essential",
+    chainId: null,
+    icon: "🔑",
+    nativeToken: "ESS",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
+  },
+  {
+    id: 23,
+    name: "Rome Protocol",
+    chainId: null,
+    icon: "🏛️",
+    nativeToken: "ROME",
+    tokens: [],
+    chartData: [],
+    totalValue: "0",
   },
 ];
 
-export default function BlockchainDashboard() {
-  const [selectedNetwork, setSelectedNetwork] = useState(networks[0]);
+type Token = {
+  chain_id: number;
+  value_usd: number;
+  // ... other properties
+};
+
+type Network = {
+  id: number;
+  name: string;
+  chainId: number | null;
+  icon: string;
+  nativeToken: string;
+  tokens: Token[];
+  chartData: { timestamp: number; value_usd: number }[];
+  totalValue: string;
+};
+
+export default function BlockchainDashboard({
+  address = "",
+}: {
+  address?: string;
+}) {
+  const [networks, setNetworks] = useState<Network[]>(initialNetworks);
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchTokenData = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3004/api/portfolio?address=${address}`
+      );
+
+      const updatedNetworks = networks.map((network) => {
+        if (network.chainId === null) return network;
+
+        const networkTokens = response.data.result.filter(
+          (token: Token) => token.chain_id === network.chainId
+        );
+
+        const totalValue = networkTokens.reduce(
+          (total: number, token: Token) => total + token.value_usd,
+          0
+        );
+
+        return {
+          ...network,
+          tokens: networkTokens,
+          totalValue: totalValue.toFixed(2),
+        };
+      });
+
+      setNetworks(updatedNetworks);
+    } catch (error) {
+      console.error("Error fetching token data:", error);
+    }
+  };
+
+  const fetchChartData = async (chainId: number | null) => {
+    if (chainId === null) return [];
+
+    try {
+      const response = await axios.get(
+        `http://localhost:3004/api/value_chart?address=${address}&chainId=${chainId}`
+      );
+
+      return response.data.result.map((data: any) => ({
+        timestamp: data.timestamp,
+        value_usd: data.value_usd,
+      }));
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    if (address) {
+      fetchTokenData();
+      Promise.all(
+        networks
+          .filter((network) => network.chainId !== null)
+          .map((network) => fetchChartData(network.chainId))
+      ).then((chartDataArray) => {
+        setNetworks((prevNetworks) =>
+          prevNetworks.map((network, index) => ({
+            ...network,
+            chartData: chartDataArray[index] || [],
+          }))
+        );
+      });
+    }
+  }, [address]);
+
+  const handleNetworkClick = (network: Network) => {
+    setSelectedNetwork(network);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-black overflow-hidden relative">
       <div
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(135deg, #0a1a2f, #000000, #0a1a2f)",
+          background:
+            "linear-gradient(135deg, #0a1a2f 13%, #000000 40%, #0a1a2f 90%)",
         }}
       ></div>
       <div className="relative z-10 max-w-7xl mx-auto p-8">
@@ -126,10 +370,7 @@ export default function BlockchainDashboard() {
             <Card
               key={network.id}
               className={`cursor-pointer transition-all duration-300 transform hover:scale-105 bg-gray-900 border-gray-700`}
-              onClick={() => {
-                setSelectedNetwork(network);
-                setIsModalOpen(true);
-              }}
+              onClick={() => handleNetworkClick(network)}
             >
               <CardHeader>
                 <CardTitle className="flex items-center text-blue-400">
@@ -146,20 +387,55 @@ export default function BlockchainDashboard() {
                 </p>
                 <p className="text-sm text-blue-300 mt-2">
                   Total Value: $
-                  {network.tokens
-                    .reduce((total, token) => total + token.value, 0)
-                    .toLocaleString()}
+                  {parseFloat(network.totalValue).toLocaleString()}
                 </p>
+              </CardContent>
+              <CardContent>
+                <div className="w-full h-44 mt-4 md:mt-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={network.chartData}>
+                      <XAxis
+                        dataKey="timestamp"
+                        tickFormatter={(timestamp) =>
+                          new Date(timestamp * 1000).toLocaleDateString()
+                        }
+                        stroke="#4B5563"
+                      />
+                      <YAxis stroke="#4B5563" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1F2937",
+                          border: "none",
+                        }}
+                        labelStyle={{ color: "#9CA3AF" }}
+                        itemStyle={{ color: "#60A5FA" }}
+                        formatter={(value: any) => [`$${value}`, "Value"]}
+                        labelFormatter={(label) =>
+                          new Date(label * 1000).toLocaleDateString()
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value_usd"
+                        stroke="#60A5FA"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <EnhancedNetworkDetailsModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          network={selectedNetwork}
-        />
+        {selectedNetwork && (
+          <EnhancedNetworkDetailsModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            network={selectedNetwork as any}
+          />
+        )}
       </div>
     </div>
   );

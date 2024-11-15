@@ -31,17 +31,25 @@ import {
 } from "@/components/ui/select";
 
 interface Token {
-  name: string;
-  symbol: string;
-  balance: string;
-  value: number;
+  chain_id: number;
+  contract_address: string;
+  amount: number;
+  price_to_usd: number;
+  value_usd: number;
+  abs_profit_usd: number;
+  roi: number;
+  status: number;
 }
 
 interface Network {
   id: number;
   name: string;
   icon: string;
+  chainId: number | null;
+  nativeToken: string;
   tokens: Token[];
+  chartData: { timestamp: number; value_usd: number }[];
+  totalValue?: string;
 }
 
 interface NetworkDetailsModalProps {
@@ -73,14 +81,12 @@ export function EnhancedNetworkDetailsModal({
     setFee("");
   };
 
-  const filteredTokens = network.tokens.filter(
-    (token) =>
-      token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTokens = network?.tokens?.filter((token) =>
+    token.contract_address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const calculateTotalValue = () =>
-    network.tokens.reduce((total, token) => total + token.value, 0);
+    network?.tokens.reduce((total, token) => total + token.value_usd, 0);
 
   const handleTokenSelection = (tokenName: string) => {
     setSelectedTokens((prev) =>
@@ -110,8 +116,8 @@ export function EnhancedNetworkDetailsModal({
       <DialogContent className="bg-gray-900 text-white border-gray-700 max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-blue-400 flex items-center">
-            <span className="text-3xl mr-2">{network.icon}</span>
-            {network.name} Network Details
+            <span className="text-3xl mr-2">{network?.icon}</span>
+            {network?.name} Network Details
           </DialogTitle>
           <DialogDescription className="text-gray-400">
             Transfer tokens from this network
@@ -154,43 +160,36 @@ export function EnhancedNetworkDetailsModal({
                 <TableHeader>
                   <TableRow className="border-gray-700">
                     <TableHead className="text-blue-400 w-12">Select</TableHead>
-                    <TableHead className="text-blue-400">Token</TableHead>
-                    <TableHead className="text-blue-400">Symbol</TableHead>
+                    <TableHead className="text-blue-400">Contract</TableHead>
                     <TableHead className="text-blue-400">Balance</TableHead>
                     <TableHead className="text-blue-400">Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTokens.map((token, index) => (
+                  {filteredTokens?.map((token, index) => (
                     <TableRow
                       key={index}
                       className="border-gray-700 hover:bg-gray-800 transition-colors"
                     >
                       <TableCell>
                         <Checkbox
-                          checked={selectedTokens.includes(token.name)}
+                          checked={selectedTokens.includes(
+                            token.contract_address
+                          )}
                           onCheckedChange={() =>
-                            handleTokenSelection(token.name)
+                            handleTokenSelection(token.contract_address)
                           }
                           className="border-gray-500"
                         />
                       </TableCell>
                       <TableCell className="font-medium text-gray-300">
-                        {token.name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-900 text-blue-300 border-blue-700"
-                        >
-                          {token.symbol}
-                        </Badge>
+                        {token.contract_address}
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        {token.balance}
+                        {token.amount}
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        ${token.value.toLocaleString()}
+                        ${token.value_usd.toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -199,7 +198,7 @@ export function EnhancedNetworkDetailsModal({
             </div>
             <div className="mt-4 text-right">
               <p className="text-lg font-semibold text-blue-400">
-                Total Value: ${calculateTotalValue().toLocaleString()}
+                Total Value: ${calculateTotalValue()?.toLocaleString()}
               </p>
             </div>
             <div className="mt-6 flex justify-end">
