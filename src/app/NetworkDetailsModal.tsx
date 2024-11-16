@@ -116,8 +116,12 @@ export function EnhancedNetworkDetailsModal({
       <DialogContent className="bg-gray-900 text-white border-gray-700 max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-blue-400 flex items-center">
-            <span className="text-3xl mr-2">{network?.icon}</span>
-            {network?.name} Network Details
+            <img
+              src={network.icon}
+              alt={`${network.name} logo`}
+              className="w-6 h-6 mr-2"
+            />{" "}
+            {network?.name}
           </DialogTitle>
           <DialogDescription className="text-gray-400">
             Transfer tokens from this network
