@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import axios from "axios";
 
 interface Token {
   chain_id: number;
@@ -58,7 +59,7 @@ interface NetworkDetailsModalProps {
   network: Network;
 }
 
-export function EnhancedNetworkDetailsModal({
+export default function EnhancedNetworkDetailsModal({
   isOpen,
   onClose,
   network,
@@ -70,6 +71,8 @@ export function EnhancedNetworkDetailsModal({
   const [destination, setDestination] = useState("");
   const [amount, setAmount] = useState("");
   const [fee, setFee] = useState("");
+  const [profitLossData, setProfitLossData] = useState<(number | "N/A")[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const resetModalState = () => {
     setSearchTerm("");
@@ -96,10 +99,6 @@ export function EnhancedNetworkDetailsModal({
     );
   };
 
-  //   const handleTransfer = () => {
-  //     setCurrentStep("type");
-  //   };
-
   const handleClose = () => {
     resetModalState();
     onClose();
@@ -110,6 +109,42 @@ export function EnhancedNetworkDetailsModal({
     else if (currentStep === "type") setCurrentStep("confirm");
     else if (currentStep === "confirm") setCurrentStep("process");
   };
+
+  function truncateAddress(
+    address: string,
+    start: number = 6,
+    end: number = 4
+  ): string {
+    if (!address) return "";
+    return `${address.slice(0, start)}...${address.slice(-end)}`;
+  }
+
+  useEffect(() => {
+    const fetchProfitLossData = async () => {
+      setIsLoading(true);
+      try {
+        const promises = network.tokens.map(async (token) => {
+          try {
+            const res = await axios.get(
+              `http://localhost:3004/api/profit_loss?address=${token.contract_address}&chainId=${token.chain_id}`
+            );
+            return parseFloat(res.data.result[1].abs_profit_usd.toFixed(2));
+          } catch (error) {
+            console.error("Error fetching profit loss:", error);
+            return "N/A";
+          }
+        });
+        const results = await Promise.all(promises);
+        setProfitLossData(results);
+      } catch (error) {
+        console.error("Error fetching profit loss data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfitLossData();
+  }, [network.tokens]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -165,38 +200,62 @@ export function EnhancedNetworkDetailsModal({
                   <TableRow className="border-gray-700">
                     <TableHead className="text-blue-400 w-12">Select</TableHead>
                     <TableHead className="text-blue-400">Contract</TableHead>
+                    <TableHead className="text-blue-400">Profit/Loss</TableHead>
                     <TableHead className="text-blue-400">Balance</TableHead>
                     <TableHead className="text-blue-400">Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTokens?.map((token, index) => (
-                    <TableRow
-                      key={index}
-                      className="border-gray-700 hover:bg-gray-800 transition-colors"
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedTokens.includes(
-                            token.contract_address
-                          )}
-                          onCheckedChange={() =>
-                            handleTokenSelection(token.contract_address)
-                          }
-                          className="border-gray-500"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium text-gray-300">
-                        {token.contract_address}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        {token.amount}
-                      </TableCell>
-                      <TableCell className="text-gray-300">
-                        ${token.value_usd.toLocaleString()}
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-4">
+                        Loading profit/loss data...
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredTokens?.map((token, index) => (
+                      <TableRow
+                        key={index}
+                        className="border-gray-700 hover:bg-gray-800 transition-colors"
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedTokens.includes(
+                              token.contract_address
+                            )}
+                            onCheckedChange={() =>
+                              handleTokenSelection(token.contract_address)
+                            }
+                            className="border-gray-500"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-300">
+                          {truncateAddress(token.contract_address)}
+                        </TableCell>
+                        <TableCell
+                          className={`text-gray-300 ${
+                            typeof profitLossData[index] === "number"
+                              ? profitLossData[index] > 0
+                                ? "text-green-500"
+                                : "text-red-500"
+                              : ""
+                          }`}
+                        >
+                          {typeof profitLossData[index] === "number"
+                            ? `${
+                                profitLossData[index] > 0 ? "+" : ""
+                              }${profitLossData[index].toFixed(2)}`
+                            : profitLossData[index]}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {token.amount}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          ${token.value_usd.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>

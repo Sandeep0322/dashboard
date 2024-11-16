@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EnhancedNetworkDetailsModal } from "./NetworkDetailsModal";
 import {
   LineChart,
   Line,
@@ -18,6 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
+import EnhancedNetworkDetailsModal from "./NetworkDetailsModal";
 
 // Expanded mock data for 9 networks
 const initialNetworks: Network[] = [
