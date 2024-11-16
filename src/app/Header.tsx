@@ -1,15 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import { DynamicWidget } from "@dynamic-labs/sdk-react-core";
+import { useCallback, useEffect, useState } from "react";
+import { DynamicWidget, useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import BlockchainDashboard from "./Dashboard";
 import Transactions from "./Transactions";
+import { WalletClient } from "viem";
+import { createSmartAccount } from "./Biconomy";
+
+type PrimaryWallet = {
+  getWalletClient: () => Promise<WalletClient | null>;
+} | null;
 
 export default function Header() {
   const { address } = useAccount();
   const [showTransactions, setShowTransactions] = useState(false);
+
+  const { primaryWallet } = useDynamicContext() as {
+    primaryWallet: PrimaryWallet;
+  };
+  const [smartAccount, setSmartAccount] = useState<any | null>(null);
+
+  const createAndSetSmartAccount = useCallback(async () => {
+    if (!primaryWallet) {
+      setSmartAccount(null);
+      return;
+    }
+
+    try {
+      const walletClient =
+        (await primaryWallet.getWalletClient()) as WalletClient;
+      if (walletClient && !smartAccount) {
+        const newSmartAccount = await createSmartAccount(walletClient);
+        console.log(newSmartAccount, "new smart account");
+        setSmartAccount(newSmartAccount);
+      }
+    } catch (error) {
+      console.log(
+        "Error fetching wallet clients or creating smart account:",
+        error
+      );
+    }
+  }, [primaryWallet, smartAccount]);
+
+  useEffect(() => {
+    createAndSetSmartAccount();
+  }, [address]);
+
+  console.log("my Biconomy smart account", smartAccount);
 
   const handleViewTransactions = () => {
     setShowTransactions(true); // Show transactions view when clicked

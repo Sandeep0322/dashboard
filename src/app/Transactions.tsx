@@ -95,7 +95,7 @@ export default function Transactions({ address = "" }: { address?: string }) {
       }
     } catch (err) {
       setError("Failed to fetch transaction history. Please try again.");
-      console.error(err);
+      console.log(err);
     } finally {
       setLoading(false);
     }

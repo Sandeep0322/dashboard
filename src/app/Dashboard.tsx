@@ -310,7 +310,7 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
         );
       }
     } catch (error) {
-      console.error("Error fetching token data:", error);
+      console.log("Error fetching token data:", error);
     }
   }, [address]);
 
@@ -336,7 +336,7 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
           );
         }
       } catch (error) {
-        console.error("Error fetching chart data:", error);
+        console.log("Error fetching chart data:", error);
       }
     },
     [address]
