@@ -270,11 +270,7 @@ type Network = {
   totalValue: string;
 };
 
-export default function BlockchainDashboard({
-  address = "",
-}: {
-  address?: string;
-}) {
+export default function BlockchainDashboard({ address }: { address?: string }) {
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -306,7 +302,8 @@ export default function BlockchainDashboard({
 
       setNetworks(updatedNetworks);
     } catch (error) {
-      console.error("Error fetching token data:", error);
+      setNetworks(initialNetworks);
+      // console.error("Error fetching token data:", error);
     }
   };
 
@@ -323,27 +320,25 @@ export default function BlockchainDashboard({
         value_usd: data.value_usd,
       }));
     } catch (error) {
-      console.error("Error fetching chart data:", error);
+      // console.error("Error fetching chart data:", error);
       return [];
     }
   };
 
   useEffect(() => {
-    if (address) {
-      fetchTokenData();
-      Promise.all(
-        networks
-          .filter((network) => network.chainId !== null)
-          .map((network) => fetchChartData(network.chainId))
-      ).then((chartDataArray) => {
-        setNetworks((prevNetworks) =>
-          prevNetworks.map((network, index) => ({
-            ...network,
-            chartData: chartDataArray[index] || [],
-          }))
-        );
-      });
-    }
+    fetchTokenData();
+    Promise.all(
+      networks
+        .filter((network) => network.chainId !== null)
+        .map((network) => fetchChartData(network.chainId))
+    ).then((chartDataArray) => {
+      setNetworks((prevNetworks) =>
+        prevNetworks.map((network, index) => ({
+          ...network,
+          chartData: chartDataArray[index] || [],
+        }))
+      );
+    });
   }, [address]);
 
   const handleNetworkClick = (network: Network) => {
@@ -397,37 +392,45 @@ export default function BlockchainDashboard({
               </CardContent>
               <CardContent>
                 <div className="w-full h-44 mt-4 md:mt-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={network.chartData}>
-                      <XAxis
-                        dataKey="timestamp"
-                        tickFormatter={(timestamp) =>
-                          new Date(timestamp * 1000).toLocaleDateString()
-                        }
-                        stroke="#4B5563"
-                      />
-                      <YAxis stroke="#4B5563" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#1F2937",
-                          border: "none",
-                        }}
-                        labelStyle={{ color: "#9CA3AF" }}
-                        itemStyle={{ color: "#60A5FA" }}
-                        formatter={(value: any) => [`$${value}`, "Value"]}
-                        labelFormatter={(label) =>
-                          new Date(label * 1000).toLocaleDateString()
-                        }
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value_usd"
-                        stroke="#60A5FA"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {network.chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={network.chartData}>
+                        <XAxis
+                          dataKey="timestamp"
+                          tickFormatter={(timestamp) =>
+                            new Date(timestamp * 1000).toLocaleDateString()
+                          }
+                          stroke="#4B5563"
+                        />
+                        <YAxis stroke="#4B5563" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1F2937",
+                            border: "none",
+                          }}
+                          labelStyle={{ color: "#9CA3AF" }}
+                          itemStyle={{ color: "#60A5FA" }}
+                          formatter={(value: any) => [`$${value}`, "Value"]}
+                          labelFormatter={(label) =>
+                            new Date(label * 1000).toLocaleDateString()
+                          }
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value_usd"
+                          stroke="#60A5FA"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-gray-500 text-sm">
+                        No chart data available
+                      </p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
