@@ -54,7 +54,7 @@ const initialNetworks: Network[] = [
   {
     id: 4,
     name: "CELO",
-    chainId: 42220,
+    chainId: null,
     icon: "/../images/celo2.png",
     nativeToken: "CELO",
     tokens: [],
@@ -64,8 +64,8 @@ const initialNetworks: Network[] = [
   {
     id: 5,
     name: "KINTO",
-    chainId: 2442,
-    icon: "/../images/kinto.png",
+    chainId: null,
+    icon: "/../images/kinto.jpeg",
     nativeToken: "KINTO",
     tokens: [],
     chartData: [],
@@ -74,7 +74,7 @@ const initialNetworks: Network[] = [
   {
     id: 6,
     name: "Polygon",
-    chainId: 137,
+    chainId: null,
     icon: "/../images/polygon_e.png",
     nativeToken: "MATIC",
     tokens: [],
@@ -104,7 +104,7 @@ const initialNetworks: Network[] = [
   {
     id: 9,
     name: "Arbitrum",
-    chainId: 42161,
+    chainId: null,
     icon: "/../images/arbitrum_e.png",
     nativeToken: "ETH",
     tokens: [],
@@ -114,7 +114,7 @@ const initialNetworks: Network[] = [
   {
     id: 10,
     name: "Unichain",
-    chainId: 1024,
+    chainId: null,
     icon: "/../images/unichain.jpeg",
     nativeToken: "UNI",
     tokens: [],
@@ -144,7 +144,7 @@ const initialNetworks: Network[] = [
   {
     id: 13,
     name: "Mantle",
-    chainId: 5000,
+    chainId: null,
     icon: "/../images/mantle.png",
     nativeToken: "MNT",
     tokens: [],
@@ -154,7 +154,7 @@ const initialNetworks: Network[] = [
   {
     id: 14,
     name: "Chiliz",
-    chainId: 88888,
+    chainId: null,
     icon: "/../images/chilliz.png",
     nativeToken: "CHZ",
     tokens: [],
@@ -194,7 +194,7 @@ const initialNetworks: Network[] = [
   {
     id: 18,
     name: "Flare Network",
-    chainId: 14,
+    chainId: null,
     icon: "/../images/flare.png",
     nativeToken: "FLR",
     tokens: [],
@@ -204,7 +204,7 @@ const initialNetworks: Network[] = [
   {
     id: 19,
     name: "Rootstock",
-    chainId: 30,
+    chainId: null,
     icon: "/../images/rootstock.jpeg",
     nativeToken: "RBTC",
     tokens: [],
@@ -214,7 +214,7 @@ const initialNetworks: Network[] = [
   {
     id: 20,
     name: "Neon",
-    chainId: 245022934,
+    chainId: null,
     icon: "/../images/neon.png",
     nativeToken: "NEON",
     tokens: [],
@@ -224,7 +224,7 @@ const initialNetworks: Network[] = [
   {
     id: 21,
     name: "Oasis",
-    chainId: 42262,
+    chainId: null,
     icon: "/../images/oasis.jpeg",
     nativeToken: "ROSE",
     tokens: [],
