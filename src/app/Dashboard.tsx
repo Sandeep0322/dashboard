@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Card,
   CardContent,
@@ -54,7 +54,7 @@ const initialNetworks: Network[] = [
   {
     id: 4,
     name: "CELO",
-    chainId: null,
+    chainId: 42220,
     icon: "/../images/celo2.png",
     nativeToken: "CELO",
     tokens: [],
@@ -64,8 +64,8 @@ const initialNetworks: Network[] = [
   {
     id: 5,
     name: "KINTO",
-    chainId: null,
-    icon: "/../images/kinto.jpeg",
+    chainId: 2442,
+    icon: "/../images/kinto.png",
     nativeToken: "KINTO",
     tokens: [],
     chartData: [],
@@ -74,7 +74,7 @@ const initialNetworks: Network[] = [
   {
     id: 6,
     name: "Polygon",
-    chainId: null,
+    chainId: 137,
     icon: "/../images/polygon_e.png",
     nativeToken: "MATIC",
     tokens: [],
@@ -104,7 +104,7 @@ const initialNetworks: Network[] = [
   {
     id: 9,
     name: "Arbitrum",
-    chainId: null,
+    chainId: 42161,
     icon: "/../images/arbitrum_e.png",
     nativeToken: "ETH",
     tokens: [],
@@ -114,7 +114,7 @@ const initialNetworks: Network[] = [
   {
     id: 10,
     name: "Unichain",
-    chainId: null,
+    chainId: 1024,
     icon: "/../images/unichain.jpeg",
     nativeToken: "UNI",
     tokens: [],
@@ -144,7 +144,7 @@ const initialNetworks: Network[] = [
   {
     id: 13,
     name: "Mantle",
-    chainId: null,
+    chainId: 5000,
     icon: "/../images/mantle.png",
     nativeToken: "MNT",
     tokens: [],
@@ -154,7 +154,7 @@ const initialNetworks: Network[] = [
   {
     id: 14,
     name: "Chiliz",
-    chainId: null,
+    chainId: 88888,
     icon: "/../images/chilliz.png",
     nativeToken: "CHZ",
     tokens: [],
@@ -194,7 +194,7 @@ const initialNetworks: Network[] = [
   {
     id: 18,
     name: "Flare Network",
-    chainId: null,
+    chainId: 14,
     icon: "/../images/flare.png",
     nativeToken: "FLR",
     tokens: [],
@@ -204,7 +204,7 @@ const initialNetworks: Network[] = [
   {
     id: 19,
     name: "Rootstock",
-    chainId: null,
+    chainId: 30,
     icon: "/../images/rootstock.jpeg",
     nativeToken: "RBTC",
     tokens: [],
@@ -214,7 +214,7 @@ const initialNetworks: Network[] = [
   {
     id: 20,
     name: "Neon",
-    chainId: null,
+    chainId: 245022934,
     icon: "/../images/neon.png",
     nativeToken: "NEON",
     tokens: [],
@@ -224,7 +224,7 @@ const initialNetworks: Network[] = [
   {
     id: 21,
     name: "Oasis",
-    chainId: null,
+    chainId: 42262,
     icon: "/../images/oasis.jpeg",
     nativeToken: "ROSE",
     tokens: [],
@@ -274,80 +274,99 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
   const [networks, setNetworks] = useState<Network[]>(initialNetworks);
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useRef(true);
+  const dataFetchedRef = useRef(false);
+  const initialNetworksRef = useRef<Network[]>(initialNetworks);
 
-  const fetchTokenData = async () => {
+  const fetchTokenData = useCallback(async () => {
+    if (!address) return;
+
     try {
       const response = await axios.get(
         `http://localhost:3004/api/portfolio?address=${address}`
       );
 
-      const updatedNetworks = networks.map((network) => {
-        if (network.chainId === null) return network;
+      if (isMounted.current) {
+        setNetworks((prevNetworks) =>
+          prevNetworks.map((network) => {
+            if (network.chainId === null) return network;
 
-        const networkTokens = response.data.result.filter(
-          (token: Token) => token.chain_id === network.chainId
+            const networkTokens = response.data.result.filter(
+              (token: Token) => token.chain_id === network.chainId
+            );
+
+            const totalValue = networkTokens.reduce(
+              (total: number, token: Token) => total + token.value_usd,
+              0
+            );
+
+            return {
+              ...network,
+              tokens: networkTokens,
+              totalValue: totalValue.toFixed(2),
+            };
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching token data:", error);
+    }
+  }, [address]);
+
+  const fetchChartData = useCallback(
+    async (network: Network) => {
+      if (!address || network.chainId === null) return;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3004/api/value_chart?address=${address}&chainId=${network.chainId}`
         );
 
-        const totalValue = networkTokens.reduce(
-          (total: number, token: Token) => total + token.value_usd,
-          0
-        );
+        const chartData = response.data.result.map((data: any) => ({
+          timestamp: data.timestamp,
+          value_usd: data.value_usd,
+        }));
 
-        return {
-          ...network,
-          tokens: networkTokens,
-          totalValue: totalValue.toFixed(2),
-        };
-      });
+        if (isMounted.current) {
+          setNetworks((prevNetworks) =>
+            prevNetworks.map((n) =>
+              n.id === network.id ? { ...n, chartData } : n
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching chart data:", error);
+      }
+    },
+    [address]
+  );
 
-      setNetworks(updatedNetworks);
-    } catch (error) {
-      setNetworks(initialNetworks);
-      // console.error("Error fetching token data:", error);
+  const fetchAllData = useCallback(async () => {
+    if (dataFetchedRef.current || !address) return;
+
+    setIsLoading(true);
+    await fetchTokenData();
+    const networksToFetch = initialNetworksRef.current; // Use the initial reference
+
+    for (const network of networksToFetch) {
+      if (network.chainId !== null) {
+        await fetchChartData(network);
+      }
     }
-  };
-
-  const fetchChartData = async (chainId: number | null) => {
-    if (chainId === null) return [];
-
-    try {
-      const response = await axios.get(
-        `http://localhost:3004/api/value_chart?address=${address}&chainId=${chainId}`
-      );
-
-      return response.data.result.map((data: any) => ({
-        timestamp: data.timestamp,
-        value_usd: data.value_usd,
-      }));
-    } catch (error) {
-      // console.error("Error fetching chart data:", error);
-      return [];
-    }
-  };
+    setIsLoading(false);
+    dataFetchedRef.current = true;
+  }, [fetchTokenData, fetchChartData, address]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await fetchTokenData(); // Fetch token data first
-
-        // Fetch chart data one by one
-        const updatedNetworks = [];
-        for (const network of networks.filter(
-          (network) => network.chainId !== null
-        )) {
-          const chartData = await fetchChartData(network.chainId); // Wait for each call to finish
-          updatedNetworks.push({ ...network, chartData: chartData || [] });
-        }
-
-        // Update networks with the fetched chart data
-        setNetworks(updatedNetworks);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+    isMounted.current = true;
+    if (address && !dataFetchedRef.current) {
+      fetchAllData();
+    }
+    return () => {
+      isMounted.current = false;
     };
-
-    fetchData(); // Trigger the fetch process
-  }, [address]);
+  }, [address, fetchAllData]);
 
   const handleNetworkClick = (network: Network) => {
     setSelectedNetwork(network);
@@ -372,19 +391,18 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
           {networks.map((network) => (
             <Card
               key={network.id}
-              className={`cursor-pointer transition-all duration-300 transform hover:scale-105 bg-gray-900 border-gray-700`}
+              className="cursor-pointer transition-all duration-300 transform hover:scale-105 bg-gray-900 border-gray-700"
               onClick={() => handleNetworkClick(network)}
             >
               <CardHeader>
-              <CardTitle className="flex items-center text-blue-400">
-                {/* Display the logo using an img tag */}
-                <img 
-                  src={network.icon} // Path to the logo (e.g., "/images/bitkub-exchange.webp")
-                  alt={`${network.name} logo`} 
-                  className="w-6 h-6 mr-2" // Adjust size and spacing
-                />
-                {network.name}
-              </CardTitle>
+                <CardTitle className="flex items-center text-blue-400">
+                  <img
+                    src={network.icon}
+                    alt={`${network.name} logo`}
+                    className="w-6 h-6 mr-2"
+                  />
+                  {network.name}
+                </CardTitle>
                 <CardDescription className="text-gray-400">
                   Click to view details
                 </CardDescription>
@@ -435,7 +453,9 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <p className="text-gray-500 text-sm">
-                        No chart data available
+                        {isLoading
+                          ? "Loading chart data..."
+                          : "No chart data available"}
                       </p>
                     </div>
                   )}
