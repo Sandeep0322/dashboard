@@ -326,19 +326,27 @@ export default function BlockchainDashboard({ address }: { address?: string }) {
   };
 
   useEffect(() => {
-    fetchTokenData();
-    Promise.all(
-      networks
-        .filter((network) => network.chainId !== null)
-        .map((network) => fetchChartData(network.chainId))
-    ).then((chartDataArray) => {
-      setNetworks((prevNetworks) =>
-        prevNetworks.map((network, index) => ({
-          ...network,
-          chartData: chartDataArray[index] || [],
-        }))
-      );
-    });
+    const fetchData = async () => {
+      try {
+        await fetchTokenData(); // Fetch token data first
+
+        // Fetch chart data one by one
+        const updatedNetworks = [];
+        for (const network of networks.filter(
+          (network) => network.chainId !== null
+        )) {
+          const chartData = await fetchChartData(network.chainId); // Wait for each call to finish
+          updatedNetworks.push({ ...network, chartData: chartData || [] });
+        }
+
+        // Update networks with the fetched chart data
+        setNetworks(updatedNetworks);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData(); // Trigger the fetch process
   }, [address]);
 
   const handleNetworkClick = (network: Network) => {
