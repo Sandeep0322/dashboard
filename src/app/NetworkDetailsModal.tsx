@@ -426,7 +426,9 @@ export default function EnhancedNetworkDetailsModal({
             const res = await axios.get(
               `http://localhost:3004/api/profit_loss?address=${token.contract_address}&chainId=${token.chain_id}`
             );
-            return parseFloat(res.data.result[1].abs_profit_usd.toFixed(2));
+            return parseFloat(
+              (res.data.result[1].abs_profit_usd / 100).toFixed(2)
+            );
           } catch (error) {
             console.log("Error fetching profit loss:", error);
             return "N/A";
